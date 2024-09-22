@@ -3,158 +3,212 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AP21110010072</title> <!-- Change to your roll number -->
+    <title>AP21110010072</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            background-color: #f9f9f9;
+            font-family: 'Helvetica', sans-serif;
+            background-color: #e8f0fe;
+            padding: 15px;
         }
+
         h1 {
+            text-align: center;
+            color: #444;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 1.1em;
             color: #333;
         }
-        .container {
-            max-width: 600px;
-            margin: auto;
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        input[type="text"], select {
+
+        input[type="text"], input[type="file"] {
             width: 100%;
-            padding: 10px;
-            margin: 10px 0;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 2px solid #ccc;
             border-radius: 5px;
-            border: 1px solid #ccc;
+            font-size: 1em;
         }
-        button {
+
+        .btn-submit {
             background-color: #28a745;
             color: white;
-            padding: 10px;
+            border: none;
+            padding: 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            display: inline-block;
+        }
+
+        .btn-submit:hover {
+            background-color: #218838;
+        }
+
+        .results-container, #multiOptions, #outputResults {
+            display: none;
+            margin-top: 20px;
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-show {
+            background-color: #007bff;
+            color: white;
+            padding: 12px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-        }
-        button:hover {
-            background-color: #218838;
-        }
-        .response {
+            display: block;
+            width: 100%;
+            text-align: center;
             margin-top: 20px;
         }
-        .error {
-            color: red;
+
+        .btn-show:hover {
+            background-color: #0069d9;
+        }
+
+        @media screen and (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+
+            .btn-submit, .btn-show {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
+    <h1>Data Submission Form</h1>
     <div class="container">
-        <h1>API Frontend</h1>
+        <form id="inputForm">
+            <label for="dataInput">Enter JSON Data (comma-separated):</label>
+            <input type="text" id="dataInput" placeholder='e.g., "M", "1", "B", "a", "5"'>
+            
+            <label for="uploadFile">Upload File:</label>
+            <input type="file" id="uploadFile">
 
-        <!-- Input Field for JSON -->
-        <label for="jsonInput">Enter JSON Data:</label>
-        <input type="text" id="jsonInput" placeholder='e.g., {"data": ["A", "B", "z"]}' />
+            <button type="submit" class="btn-submit">Submit Data</button>
+        </form>
 
-        <!-- Dropdown for Filtering Response -->
-        <label for="filter">Select Fields to Show:</label>
-        <select id="filter" multiple>
-            <option value="alphabets">Alphabets</option>
-            <option value="numbers">Numbers</option>
-            <option value="highest_lowercase_alphabet">Highest Lowercase Alphabet</option>
-        </select>
+        <div id="multiOptions"></div>
+        <button id="btnShowResults" class="btn-show">Show Selected Options</button>
 
-        <!-- Submit Button -->
-        <button id="submitButton">Submit</button>
-
-        <!-- Display Response -->
-        <div class="response" id="response">
-            <!-- API response will be displayed here -->
-        </div>
-
-        <!-- Error Message -->
-        <p class="error" id="errorMessage" style="display: none;"></p>
+        <div id="outputResults"></div>
     </div>
 
     <script>
-        const apiUrl = 'https://rest-api-559n.onrender.com/bfhl'; // Replace with your API URL
+        let responseStorage = {}; // Hold response from API
 
-        // Get DOM elements
-        const jsonInput = document.getElementById('jsonInput');
-        const filterSelect = document.getElementById('filter');
-        const submitButton = document.getElementById('submitButton');
-        const responseDiv = document.getElementById('response');
-        const errorMessage = document.getElementById('errorMessage');
+        document.getElementById('inputForm').addEventListener('submit', function(event) {
+            event.preventDefault();  // Prevent page reload on form submit
 
-        // Function to validate JSON input
-        function isValidJson(input) {
-            try {
-                JSON.parse(input);
-                return true;
-            } catch (e) {
-                return false;
-            }
-        }
+            const inputText = document.getElementById('dataInput').value;
+            const parsedData = inputText.split(',').map(item => item.trim());
 
-        // Function to send data to the API and process the response
-        async function sendDataToAPI(jsonData) {
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: jsonData,
-                });
-                return await response.json();
-            } catch (error) {
-                console.error('Error:', error);
-                return null;
-            }
-        }
+            const file = document.getElementById('uploadFile').files[0];
+            let fileBase64 = null;
 
-        // Function to filter and display response based on dropdown selection
-        function displayFilteredResponse(responseData) {
-            const selectedOptions = Array.from(filterSelect.selectedOptions).map(option => option.value);
-            let displayData = '';
-
-            if (selectedOptions.includes('alphabets') && responseData.alphabets) {
-                displayData += `<p><strong>Alphabets:</strong> ${responseData.alphabets.join(', ')}</p>`;
-            }
-
-            if (selectedOptions.includes('numbers') && responseData.numbers) {
-                displayData += `<p><strong>Numbers:</strong> ${responseData.numbers.join(', ')}</p>`;
-            }
-
-            if (selectedOptions.includes('highest_lowercase_alphabet') && responseData.highest_lowercase_alphabet) {
-                displayData += `<p><strong>Highest Lowercase Alphabet:</strong> ${responseData.highest_lowercase_alphabet}</p>`;
-            }
-
-            responseDiv.innerHTML = displayData || '<p>No data to display for the selected filters.</p>';
-        }
-
-        // Button click event handler
-        submitButton.addEventListener('click', async () => {
-            const jsonData = jsonInput.value.trim();
-
-            // Validate JSON input
-            if (!isValidJson(jsonData)) {
-                errorMessage.textContent = 'Invalid JSON format. Please correct the input.';
-                errorMessage.style.display = 'block';
-                responseDiv.innerHTML = '';
-                return;
-            }
-
-            errorMessage.style.display = 'none'; // Hide error message if JSON is valid
-
-            // Send the valid JSON to the API
-            const responseData = await sendDataToAPI(jsonData);
-
-            if (responseData && responseData.is_success) {
-                // Display the filtered response based on dropdown selection
-                displayFilteredResponse(responseData);
+            if (file) {
+                const reader = new FileReader();
+                reader.onloadend = function () {
+                    fileBase64 = reader.result.split(',')[1];  // Extract base64 part
+                    submitData(parsedData, fileBase64);  // Call function with data
+                };
+                reader.readAsDataURL(file);
             } else {
-                responseDiv.innerHTML = '<p>Error processing the data or no valid response from API.</p>';
+                submitData(parsedData, fileBase64);  // No file provided
             }
+        });
+
+        function submitData(dataArray, fileBase64) {
+            fetch('"C:\Users\varsha\rest-api-project\rest api\app.js"', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: dataArray, file_b64: fileBase64 })
+            })
+            .then(response => response.json())
+            .then(result => {
+                responseStorage = result;  // Save API response
+                renderOptions(result);     // Call render function
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('outputResults').innerHTML = `<p>Error: ${error.message}</p>`;
+            });
+        }
+
+        function renderOptions(result) {
+            const optionsDiv = document.getElementById('multiOptions');
+            optionsDiv.innerHTML = ""; // Clear existing options
+            document.getElementById('btnShowResults').style.display = "none";
+            document.getElementById('outputResults').style.display = "none";
+
+            const fields = [
+                "is_success",
+                "user_id",
+                "email",
+                "roll_number",
+                "numbers",
+                "alphabets",
+                "highest_lowercase_alphabet",
+                "file_valid",
+                "file_mime_type",
+                "file_size_kb"
+            ];
+
+            fields.forEach(field => {
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = field;
+                checkbox.value = field;
+
+                const label = document.createElement('label');
+                label.htmlFor = field;
+                label.textContent = field;
+
+                const optionDiv = document.createElement('div');
+                optionDiv.appendChild(checkbox);
+                optionDiv.appendChild(label);
+                optionsDiv.appendChild(optionDiv);
+            });
+
+            document.getElementById('multiOptions').style.display = "block";
+            document.getElementById('btnShowResults').style.display = "inline-block";
+        }
+
+        document.getElementById('btnShowResults').addEventListener('click', function() {
+            const selectedFields = [];
+            const checkboxes = document.querySelectorAll('#multiOptions input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    selectedFields.push(checkbox.value);
+                }
+            });
+
+            const displayResult = selectedFields.map(field => {
+                const value = responseStorage[field];
+                return `<strong>${field}:</strong> ${Array.isArray(value) ? `[ ${value.join(", ")} ]` : value}<br>`;
+            }).join('');
+
+            document.getElementById('outputResults').innerHTML = displayResult;
+            document.getElementById('outputResults').style.display = "block";
         });
     </script>
 </body>
