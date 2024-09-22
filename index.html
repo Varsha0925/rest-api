@@ -95,16 +95,16 @@
     </style>
 </head>
 <body>
-    <h1>Data Submission Form</h1>
+    <h1>Enter the data</h1>
     <div class="container">
         <form id="inputForm">
-            <label for="dataInput">Enter JSON Data (comma-separated):</label>
+            <label for="dataInput">Enter Data:</label>
             <input type="text" id="dataInput" placeholder='e.g., "M", "1", "B", "a", "5"'>
             
-            <label for="uploadFile">Upload File:</label>
+            <label for="uploadFile">Choose File:</label>
             <input type="file" id="uploadFile">
 
-            <button type="submit" class="btn-submit">Submit Data</button>
+            <button type="submit" class="btn-submit">Submit</button>
         </form>
 
         <div id="multiOptions"></div>
@@ -161,16 +161,16 @@
             document.getElementById('outputResults').style.display = "none";
 
             const fields = [
-                "is_success",
-                "user_id",
+                "Status",
+                "user id",
                 "email",
-                "roll_number",
+                "roll number",
                 "numbers",
                 "alphabets",
-                "highest_lowercase_alphabet",
-                "file_valid",
-                "file_mime_type",
-                "file_size_kb"
+                "highest lowercase alphabet",
+                "file valid",
+                "file mime type",
+                "file size"
             ];
 
             fields.forEach(field => {
