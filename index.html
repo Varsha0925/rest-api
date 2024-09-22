@@ -138,7 +138,7 @@
         });
 
         function submitData(dataArray, fileBase64) {
-            fetch('"C:\Users\varsha\rest-api-project\rest api\app.js"', {
+            fetch('https://rest-api-1-0axg.onrender.com', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ data: dataArray, file_b64: fileBase64 })
