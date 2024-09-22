@@ -1,70 +1,81 @@
 const express = require('express');
+const cors = require('cors');
 const bodyParser = require('body-parser');
-const atob = require('atob');
 
+// Initialize the Express application
 const app = express();
-app.use(bodyParser.json({ limit: '10mb' }));
 
-// Helper function to check if a string is a number
-const isNumber = (str) => !isNaN(str);
+// Enable CORS for all incoming requests
+app.use(cors());
 
-// Helper function to decode Base64 string and validate file
-const validateFile = (base64String) => {
-    try {
-        let fileBuffer = Buffer.from(base64String, 'base64');
-        let mimeType = fileBuffer.toString('hex', 0, 4);  // Simple way to check MIME type (you can expand)
-        let sizeKb = fileBuffer.length / 1024;
-        return {
-            isValid: true,
-            mimeType: mimeType.includes('ffd8') ? 'image/jpeg' : mimeType.includes('8950') ? 'image/png' : 'application/octet-stream',
-            fileSize: sizeKb.toFixed(2)
-        };
-    } catch (error) {
-        return { isValid: false, mimeType: null, fileSize: 0 };
-    }
-};
+// Configure body parser to handle large JSON payloads
+app.use(bodyParser.json({ limit: '50mb' }));
 
-// POST endpoint
+// POST route for handling incoming requests at /bfhl
 app.post('/bfhl', (req, res) => {
-    const { data, file_b64 } = req.body;
+    try {
+        const { data, file_b64 } = req.body;
+        const userId = "Varsha_Reddy_25122003";  // Replace this with dynamic user data if needed
 
-    // Extracting numbers and alphabets
-    let numbers = data.filter(isNumber);
-    let alphabets = data.filter(x => !isNumber(x));
+        // Check if data exists and is an array
+        if (!data || !Array.isArray(data)) {
+            return res.status(400).json({ success: false, message: "Invalid input data format" });
+        }
 
-    // Find the highest lowercase alphabet
-    let lowercaseAlphabets = alphabets.filter(x => x === x.toLowerCase());
-    let highestLowercaseAlphabet = lowercaseAlphabets.length > 0
-        ? [lowercaseAlphabets.sort().reverse()[0]]
-        : [];
+        // Separate numeric and alphabetic values from the input array
+        const numbers = data.filter(item => !isNaN(item));
+        const alphabets = data.filter(item => isNaN(item));
+        const lowercaseAlphabets = alphabets.filter(item => /^[a-z]$/.test(item));
 
-    // Validate file
-    let fileInfo = file_b64 ? validateFile(file_b64) : { isValid: false, mimeType: null, fileSize: 0 };
+        // Identify the highest lowercase letter
+        const maxLowercaseAlphabet = lowercaseAlphabets.length > 0
+            ? [lowercaseAlphabets.sort().pop()]
+            : [];
 
-    // Response
-    res.json({
-        is_success: true,
-        user_id: "Varsha",  // Modify to use actual user details
-        email: "varsha_punuru@srmap.edu.in",  // Modify with your email
-        roll_number: "AP21110010072",  // Modify with your roll number
-        numbers,
-        alphabets,
-        highest_lowercase_alphabet: highestLowercaseAlphabet,
-        file_valid: fileInfo.isValid,
-        file_mime_type: fileInfo.mimeType,
-        file_size_kb: fileInfo.fileSize
-    });
+        // Handle file processing
+        let isFileValid = false;
+        let fileMimeType = null;
+        let fileSizeKB = null;
+
+        if (file_b64) {
+            const buffer = Buffer.from(file_b64, 'base64');
+            fileSizeKB = (buffer.length / 1024).toFixed(2);  // Convert bytes to KB
+
+            // Add file validation if necessary
+            isFileValid = true;
+            fileMimeType = "application/octet-stream";  // Default MIME type for raw binary data
+        }
+
+        // Construct the response payload
+        const responsePayload = {
+            success: true,
+            user_id: userId,
+            email: "varsha_punuru@srmap.edu.in",
+            roll_number: "AP21110010072",
+            numbers: numbers,
+            alphabets: alphabets,
+            highest_lowercase_alphabet: maxLowercaseAlphabet,
+            file_valid: isFileValid,
+            file_mime_type: fileMimeType,
+            file_size_kb: fileSizeKB
+        };
+
+        // Send the response back to the client
+        res.json(responsePayload);
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
 });
 
-// GET endpoint
+// GET route for returning a hardcoded operation code
 app.get('/bfhl', (req, res) => {
     res.json({
         operation_code: 1
     });
 });
 
-// Starting the server
+// Start the Express server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Server is running at http://localhost:${PORT}`);
 });
