@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AP21110010072</title> <!-- Change to your roll number -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        input[type="text"], select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .response {
+            margin-top: 20px;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>API Frontend</h1>
+
+        <!-- Input Field for JSON -->
+        <label for="jsonInput">Enter JSON Data:</label>
+        <input type="text" id="jsonInput" placeholder='e.g., {"data": ["A", "B", "z"]}' />
+
+        <!-- Dropdown for Filtering Response -->
+        <label for="filter">Select Fields to Show:</label>
+        <select id="filter" multiple>
+            <option value="alphabets">Alphabets</option>
+            <option value="numbers">Numbers</option>
+            <option value="highest_lowercase_alphabet">Highest Lowercase Alphabet</option>
+        </select>
+
+        <!-- Submit Button -->
+        <button id="submitButton">Submit</button>
+
+        <!-- Display Response -->
+        <div class="response" id="response">
+            <!-- API response will be displayed here -->
+        </div>
+
+        <!-- Error Message -->
+        <p class="error" id="errorMessage" style="display: none;"></p>
+    </div>
+
+    <script>
+        const apiUrl = '"C:\Users\varsha\rest-api-project\app.js"'; // Replace with your API URL
+
+        // Get DOM elements
+        const jsonInput = document.getElementById('jsonInput');
+        const filterSelect = document.getElementById('filter');
+        const submitButton = document.getElementById('submitButton');
+        const responseDiv = document.getElementById('response');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // Function to validate JSON input
+        function isValidJson(input) {
+            try {
+                JSON.parse(input);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // Function to send data to the API and process the response
+        async function sendDataToAPI(jsonData) {
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: jsonData,
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                return null;
+            }
+        }
+
+        // Function to filter and display response based on dropdown selection
+        function displayFilteredResponse(responseData) {
+            const selectedOptions = Array.from(filterSelect.selectedOptions).map(option => option.value);
+            let displayData = '';
+
+            if (selectedOptions.includes('alphabets') && responseData.alphabets) {
+                displayData += `<p><strong>Alphabets:</strong> ${responseData.alphabets.join(', ')}</p>`;
+            }
+
+            if (selectedOptions.includes('numbers') && responseData.numbers) {
+                displayData += `<p><strong>Numbers:</strong> ${responseData.numbers.join(', ')}</p>`;
+            }
+
+            if (selectedOptions.includes('highest_lowercase_alphabet') && responseData.highest_lowercase_alphabet) {
+                displayData += `<p><strong>Highest Lowercase Alphabet:</strong> ${responseData.highest_lowercase_alphabet}</p>`;
+            }
+
+            responseDiv.innerHTML = displayData || '<p>No data to display for the selected filters.</p>';
+        }
+
+        // Button click event handler
+        submitButton.addEventListener('click', async () => {
+            const jsonData = jsonInput.value.trim();
+
+            // Validate JSON input
+            if (!isValidJson(jsonData)) {
+                errorMessage.textContent = 'Invalid JSON format. Please correct the input.';
+                errorMessage.style.display = 'block';
+                responseDiv.innerHTML = '';
+                return;
+            }
+
+            errorMessage.style.display = 'none'; // Hide error message if JSON is valid
+
+            // Send the valid JSON to the API
+            const responseData = await sendDataToAPI(jsonData);
+
+            if (responseData && responseData.is_success) {
+                // Display the filtered response based on dropdown selection
+                displayFilteredResponse(responseData);
+            } else {
+                responseDiv.innerHTML = '<p>Error processing the data or no valid response from API.</p>';
+            }
+        });
+    </script>
+</body>
+</html>
